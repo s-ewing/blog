@@ -1,0 +1,85 @@
+const BlogPost = require("../model/BlogPost");
+
+const getAllBlogPosts = async (req, res) => {
+  const blogPosts = await BlogPost.find();
+  if (!blogPosts)
+    return res.status(204).json({ message: "No blog posts found." });
+  res.json(blogPosts);
+};
+
+const getBlogPost = async (req, res) => {
+  if (!req?.params?.id)
+    return res.status(400).json({ message: "Blog post ID is required." });
+
+  //find blog post by id
+  const blogPost = await BlogPost.findById(req.params.id).exec();
+  if (!blogPost) {
+    return res
+      .status(204)
+      .json({ message: `No blog with ID ${req.body.id} was found.` });
+  }
+  res.json(blogPost);
+};
+
+const createNewBlogPost = async (req, res) => {
+  const { title, body } = req.body;
+
+  if (!title || !body)
+    return res.status(400).json({ message: "Title and body are required." });
+
+  const duplicate = await BlogPost.findOne({ title: title }).exec();
+  if (duplicate) return res.sendStatus(409);
+
+  try {
+    //create and store new blog post
+    const result = await BlogPost.create({
+      title: title,
+      body: body,
+    });
+    res.status(201).json({ success: `New blog post ${title} created!` });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+const editBlogPost = async (req, res) => {
+  if (!req?.body.id)
+    return res.status(400).json({ message: "Blog post ID is required." });
+
+  //find blog post by id
+  const blogPost = await BlogPost.findById(req.body.id).exec();
+  if (!blogPost) {
+    return res
+      .status(204)
+      .json({ message: `No blog with ID ${req.body.id} was found.` });
+  }
+  //update blog post
+  if (req.body?.title) blogPost.title = req.body.title;
+  if (req.body?.body) blogPost.body = req.body.body;
+  const result = await blogPost.save();
+  res.json(result);
+};
+
+const deleteBlogPost = async (req, res) => {
+  if (!req?.body.id)
+    return res.status(400).json({ message: "Blog post ID is required." });
+
+  //find blog post by id
+  const blogPost = await BlogPost.findById(req.body.id).exec();
+  if (!blogPost) {
+    return res
+      .status(204)
+      .json({ message: `No blog with ID ${req.body.id} was found.` });
+  }
+
+  const result = await blogPost.deleteOne();
+  res.json(result);
+};
+
+module.exports = {
+  getAllBlogPosts,
+  getBlogPost,
+  createNewBlogPost,
+  editBlogPost,
+  deleteBlogPost,
+};
